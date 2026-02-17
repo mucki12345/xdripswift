@@ -324,7 +324,7 @@ class Trace {
         
         var traceInfo = ""
         
-        traceInfo.appendStringAndNewLine("\nDate & timezone: " + Date().toStringForTrace(timeStyle: .full, dateStyle: .medium))
+        traceInfo.appendStringAndNewLine("\nDate & Timezone: " + Date().toStringForTrace(timeStyle: .full, dateStyle: .medium))
         
         traceInfo.appendStringAndNewLine(paragraphSeperator)
         
@@ -334,10 +334,10 @@ class Trace {
         traceInfo.appendStringAndNewLine("Build number: " + buildNumber + " (" + timeStampAppBuild.toStringForTrace(timeStyle: .none, dateStyle: .medium) + ")\n")
         
         // app install and open timestamps
-        traceInfo.appendStringAndNewLine("Installed on: " + timeStampAppInstall.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + timeStampAppInstall.daysAndHoursAgo(appendAgo: true) + ")")
+        traceInfo.appendStringAndNewLine("Installed on: " + timeStampAppInstall.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + timeStampAppInstall.daysAndHoursAgo(appendAgo: true, forTrace: true) + ")")
                 
         if let timeStampAppLaunch = UserDefaults.standard.timeStampAppLaunch {
-            traceInfo.appendStringAndNewLine("Last opened on: " + timeStampAppLaunch.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + timeStampAppLaunch.daysAndHoursAgo(appendAgo: true) + ")")
+            traceInfo.appendStringAndNewLine("Last opened on: " + timeStampAppLaunch.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + timeStampAppLaunch.daysAndHoursAgo(appendAgo: true, forTrace: true) + ")")
         }
         
         traceInfo.appendStringAndNewLine(paragraphSeperator)
@@ -350,6 +350,7 @@ class Trace {
         traceInfo.appendStringAndNewLine("    Measurement unit: " + (UserDefaults.standard.bloodGlucoseUnitIsMgDl ? Texts_Common.mgdl : Texts_Common.mmol))
         
         if UserDefaults.standard.isMaster {
+            traceInfo.appendStringAndNewLine("    Upload master values to Nightscout: " + UserDefaults.standard.masterUploadDataToNightscout.description)
             
             if let cgmTransmitterTypeAsString = UserDefaults.standard.cgmTransmitterTypeAsString {
                 traceInfo.appendStringAndNewLine("    Transmitter type: " + cgmTransmitterTypeAsString)
@@ -360,11 +361,25 @@ class Trace {
             traceInfo.appendStringAndNewLine("    Keep-alive type: " + UserDefaults.standard.followerBackgroundKeepAliveType.description)
             traceInfo.appendStringAndNewLine("    Patient name: " + (UserDefaults.standard.followerPatientName?.description ?? "nil"))
             
-            // if follower mode, what is the data source selected
-            if UserDefaults.standard.followerDataSourceType == .libreLinkUp {
+            if UserDefaults.standard.followerDataSourceType == .nightscout {
+                traceInfo.appendStringAndNewLine("    URL: " + ((UserDefaults.standard.nightscoutUrl?.description ?? "") != "" ? "present" : "missing"))
+                traceInfo.appendStringAndNewLine("    Upload follower values to Nightscout: " + UserDefaults.standard.followerUploadDataToNightscout.description)
+            }
+            
+            if UserDefaults.standard.followerDataSourceType == .libreLinkUp || UserDefaults.standard.followerDataSourceType == .libreLinkUpRussia {
                 traceInfo.appendStringAndNewLine("    Username: " + ((UserDefaults.standard.libreLinkUpEmail?.description ?? "") != "" ? "present" : "missing"))
                 traceInfo.appendStringAndNewLine("    Password: " + ((UserDefaults.standard.libreLinkUpPassword?.description ?? "") != "" ? "present" : "missing"))
-                traceInfo.appendStringAndNewLine("    Upload to Nightscout: " + UserDefaults.standard.followerUploadDataToNightscout.description)
+                traceInfo.appendStringAndNewLine("    Region: " + (UserDefaults.standard.libreLinkUpRegion?.description ?? "nil"))
+                traceInfo.appendStringAndNewLine("    Country: " + (UserDefaults.standard.libreLinkUpCountry?.description ?? "nil"))
+                traceInfo.appendStringAndNewLine("    Is 15 day sensor: " + UserDefaults.standard.libreLinkUpIs15DaySensor.description)
+                traceInfo.appendStringAndNewLine("    Upload LLU follower values to Nightscout: " + UserDefaults.standard.followerUploadDataToNightscout.description)
+            }
+            
+            if UserDefaults.standard.followerDataSourceType == .dexcomShare {
+                traceInfo.appendStringAndNewLine("    Username: " + ((UserDefaults.standard.dexcomShareAccountName?.description ?? "") != "" ? "present" : "missing"))
+                traceInfo.appendStringAndNewLine("    Password: " + ((UserDefaults.standard.dexcomSharePassword?.description ?? "") != "" ? "present" : "missing"))
+                traceInfo.appendStringAndNewLine("    Region: " + UserDefaults.standard.dexcomShareRegion.description)
+                traceInfo.appendStringAndNewLine("    Upload Share follower values to Nightscout: " + UserDefaults.standard.followerUploadDataToNightscout.description)
             }
         }
         
@@ -433,7 +448,7 @@ class Trace {
         traceInfo.appendStringAndNewLine("\nApple Watch settings:")
         traceInfo.appendStringAndNewLine("    Show values in complications: " + UserDefaults.standard.showDataInWatchComplications.description)
         if let agreementDate = UserDefaults.standard.watchComplicationUserAgreementDate {
-            traceInfo.appendStringAndNewLine("    User agreement date: " + agreementDate.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + agreementDate.daysAndHoursAgo(appendAgo: true) + ")")
+            traceInfo.appendStringAndNewLine("    User agreement date: " + agreementDate.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + agreementDate.daysAndHoursAgo(appendAgo: true, forTrace: true) + ")")
             if let remainingComplicationUserInfoTransfers = UserDefaults.standard.remainingComplicationUserInfoTransfers {
                 traceInfo.appendStringAndNewLine("    Remaining complication updates: " + remainingComplicationUserInfoTransfers.description + " / 50")
             }
@@ -494,7 +509,7 @@ class Trace {
         if !(!UserDefaults.standard.isMaster && UserDefaults.standard.followerDataSourceType == .nightscout) {
             traceInfo.appendStringAndNewLine("    Description: " + (UserDefaults.standard.activeSensorDescription?.description ?? "nil"))
             if let startDate = UserDefaults.standard.activeSensorStartDate {
-                traceInfo.appendStringAndNewLine("    Sensor start date: " + startDate.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + startDate.daysAndHoursAgo(appendAgo: true) + ")")
+                traceInfo.appendStringAndNewLine("    Sensor start date: " + startDate.toStringForTrace(timeStyle: .short, dateStyle: .medium) + " (" + startDate.daysAndHoursAgo(appendAgo: true, forTrace: true) + ")")
             } else {
                 traceInfo.appendStringAndNewLine("    Sensor start date: nil")
             }
@@ -553,24 +568,14 @@ class Trace {
                             
                         }
                         
-                    case .DexcomG4Type:
-                        if let dexcomG4 = blePeripheral.dexcomG4 {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            
-                            // if needed additional specific info can be added
-                            traceInfo.appendStringAndNewLine("        Battery level: " + dexcomG4.batteryLevel.description)
-                            
-                        }
-                        
                     case .DexcomType:
                         if let dexcomG5 = blePeripheral.dexcomG5 {
                             
                             traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
                             
-                            traceInfo.appendStringAndNewLine("        Transmitter start date: " + (dexcomG5.transmitterStartDate?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.transmitterStartDate?.daysAndHoursAgo(appendAgo: true) ?? "nil") + ")")
+                            traceInfo.appendStringAndNewLine("        Transmitter start date: " + (dexcomG5.transmitterStartDate?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.transmitterStartDate?.daysAndHoursAgo(appendAgo: true, forTrace: true) ?? "nil") + ")")
                             
-                            traceInfo.appendStringAndNewLine("        Sensor start date: " + (dexcomG5.sensorStartDate?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.sensorStartDate?.daysAndHoursAgo(appendAgo: true) ?? "nil") + ")")
+                            traceInfo.appendStringAndNewLine("        Sensor start date: " + (dexcomG5.sensorStartDate?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.sensorStartDate?.daysAndHoursAgo(appendAgo: true, forTrace: true) ?? "nil") + ")")
                             
                             traceInfo.appendStringAndNewLine("        Sensor status: " + (dexcomG5.sensorStatus?.description ?? "nil"))
                             
@@ -580,28 +585,11 @@ class Trace {
                             
                             traceInfo.appendStringAndNewLine("        Is Anubis?: " + dexcomG5.isAnubis.description)
                             
-                            traceInfo.appendStringAndNewLine("        Last reset: " + (dexcomG5.lastResetTimeStamp?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.lastResetTimeStamp?.daysAndHoursAgo(appendAgo: true) ?? "nil") + ")")
+                            traceInfo.appendStringAndNewLine("        Last reset: " + (dexcomG5.lastResetTimeStamp?.toStringForTrace(timeStyle: .short, dateStyle: .medium) ?? "nil") + " (" + (dexcomG5.lastResetTimeStamp?.daysAndHoursAgo(appendAgo: true, forTrace: true) ?? "nil") + ")")
                             
                             // if needed additional specific info can be added
                             traceInfo.appendStringAndNewLine("        Voltage A: " + dexcomG5.voltageA.description + "0mV")
                             traceInfo.appendStringAndNewLine("        Voltage B: " + dexcomG5.voltageB.description + "0mV")
-                            
-                        }
-                        
-                    case .BluconType:
-                        if let blucon = blePeripheral.blucon {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            
-                            // if needed additional specific info can be added
-                            traceInfo.appendStringAndNewLine("        Battery level: " + blucon.batteryLevel.description)
-                            
-                        }
-                        
-                    case .BlueReaderType:
-                        if blePeripheral.blueReader != nil {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
                             
                         }
                         
@@ -612,44 +600,12 @@ class Trace {
                             traceInfo.appendStringAndNewLine("        Battery level: " + bubble.batteryLevel.description)
                             
                         }
-                        
-                    case .DropletType:
-                        if let droplet = blePeripheral.droplet {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            traceInfo.appendStringAndNewLine("        Battery level: " + droplet.batteryLevel.description)
-                            
-                        }
-
-                    case .GNSentryType:
-                        if let gNSEntry = blePeripheral.gNSEntry {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            traceInfo.appendStringAndNewLine("        Battery level: " + gNSEntry.batteryLevel.description)
-                            
-                        }
 
                     case .MiaoMiaoType:
                         if let miaoMiao = blePeripheral.miaoMiao {
                             
                             traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
                             traceInfo.appendStringAndNewLine("        Battery level: " + miaoMiao.batteryLevel.description)
-                            
-                        }
-                        
-                    case .AtomType:
-                        if let miaoMiao = blePeripheral.atom {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            traceInfo.appendStringAndNewLine("        Battery level: " + miaoMiao.batteryLevel.description)
-                            
-                        }
-                        
-                    case .WatlaaType:
-                        if let watlaa = blePeripheral.watlaa {
-                            
-                            traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            traceInfo.appendStringAndNewLine("        Battery level: " + watlaa.watlaaBatteryLevel.description)
                             
                         }
                         
@@ -677,11 +633,11 @@ class Trace {
                         
                     case .OmniPodHeartBeatType:
                         if blePeripheral.omniPodHeartBeat != nil {
-                            
+
                             traceInfo.appendStringAndNewLine("        Type: " + bluetoothPeripheralType.rawValue)
-                            
+
                         }
-                        
+
                     case .DexcomG7Type:
                         if blePeripheral.dexcomG7 != nil {
                             
@@ -708,10 +664,19 @@ class Trace {
                 let alertEntries = alertEntriesAccessor.getAllEntries(forAlertKind: alertKind, alertTypesAccessor: alertTypesAccessor)
                 
                 for alertEntry in alertEntries {
-                    traceInfo.appendStringAndNewLine("        -> start: " + alertEntry.start.convertMinutesToTimeAsString() + " / value: " +  alertEntry.value.description + " / alarm type: " + alertEntry.alertType.description)
-                    
+                    if alertEntry.isDisabled {
+                        traceInfo.appendStringAndNewLine("        -> disabled")
+                    } else {
+                        switch alertKind {
+                        case .fastdrop:
+                            traceInfo.appendStringAndNewLine("        -> start: " + alertEntry.start.convertMinutesToTimeAsString() + " / value: " +  alertEntry.value.description + " / when < " +  alertEntry.triggerValue.description + " / alarm type: " + alertEntry.alertType.description)
+                        case .fastrise:
+                            traceInfo.appendStringAndNewLine("        -> start: " + alertEntry.start.convertMinutesToTimeAsString() + " / value: " +  alertEntry.value.description + " / when > " +  alertEntry.triggerValue.description + " / alarm type: " + alertEntry.alertType.description)
+                        default:
+                            traceInfo.appendStringAndNewLine("        -> start: " + alertEntry.start.convertMinutesToTimeAsString() + " / value: " +  alertEntry.value.description + " / alarm type: " + alertEntry.alertType.description)
+                        }
+                    }
                 }
-                
             }
             
             traceInfo.appendStringAndNewLine(paragraphSeperator)
